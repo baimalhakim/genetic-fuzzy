@@ -178,98 +178,97 @@ function geneticAlgorithm($job_id, $conn, $rank_limit, $score_range, $generation
     return $b['score_test'] <=> $a['score_test'];
 });
       
-        $selected = array_slice($population, 0, $rank_limit); // Memilih individu terbaik
+$selected = array_slice($population, 0, $rank_limit); // Memilih individu terbaik
 
-        // Crossover
-        $new_population = [];
-        for ($i = 0; $i < count($selected); $i += 2) {
-            if ($i + 1 < count($selected)) {
-                $parent1 = $selected[$i];
-                $parent2 = $selected[$i + 1];
+// Crossover
+$new_population = [];
+for ($i = 0; $i < count($selected); $i += 2) {
+    if ($i + 1 < count($selected)) {
+        $parent1 = $selected[$i];
+        $parent2 = $selected[$i + 1];
 
-                // Kombinasi skor dari kedua parent
-                $child1 = [
-                    'score_test' => ($parent1['score_test'] + $parent2['score_test']) / 2,
-                    'soft_skills' => ($parent1['soft_skills'] + $parent2['soft_skills']) / 2,
-                    'score_interviews' => ($parent1['score_interviews'] + $parent2['score_interviews']) / 2,
-                ];
-                $child2 = [
-                    'score_test' => $parent1['score_test'],
-                    'soft_skills' => $parent2['soft_skills'],
-                    'score_interviews' => $parent1['score_interviews'],
-                ];
+        // Kombinasi skor dari kedua parent
+        $child1 = [
+            'score_test' => ($parent1['score_test'] + $parent2['score_test']) / 2,
+            'soft_skills' => ($parent1['soft_skills'] + $parent2['soft_skills']) / 2,
+            'score_interviews' => ($parent1['score_interviews'] + $parent2['score_interviews']) / 2,
+        ];
+        $child2 = [
+            'score_test' => $parent1['score_test'],
+            'soft_skills' => $parent2['soft_skills'],
+            'score_interviews' => $parent1['score_interviews'],
+        ];
 
-                // Evaluasi anak-anak menggunakan fuzzy
-                $child1['final_score'] = fuzzyLogic(
-                    $child1['score_test'], 
-                    $child1['soft_skills'], 
-                    $child1['score_interviews']
-                )['final_score'];
-                $child2['final_score'] = fuzzyLogic(
-                    $child2['score_test'], 
-                    $child2['soft_skills'], 
-                    $child2['score_interviews']
-                )['final_score'];
+        // Evaluasi anak-anak menggunakan fuzzy
+        $child1['final_score'] = fuzzyLogic(
+            $child1['score_test'], 
+            $child1['soft_skills'], 
+            $child1['score_interviews']
+        )['final_score'];
+            $child2['final_score'] = fuzzyLogic(
+            $child2['score_test'], 
+            $child2['soft_skills'], 
+            $child2['score_interviews']
+        )['final_score'];
 
-                $new_population[] = $child1;
-                $new_population[] = $child2;
-            }
-        }
-
-        // Mutasi
-        foreach ($new_population as &$individual) {
-            if (rand(0, 100) / 100 < $mutation_rate) {
-                $individual['score_test'] = min(100, max(0, $individual['score_test'] + rand(-5, 5)));
-                $individual['soft_skills'] = min(100, max(0, $individual['soft_skills'] + rand(-5, 5)));
-                $individual['score_interviews'] = min(100, max(0, $individual['score_interviews'] + rand(-5, 5)));
-
-                $individual['final_score'] = fuzzyLogic(
-                    $individual['score_test'], 
-                    $individual['soft_skills'], 
-                    $individual['score_interviews']
-                )['final_score'];
-            }
-        }
-
-        $population = array_merge($selected, $new_population); // Menggabungkan populasi lama dengan generasi baru
-
-        $population = array_slice($population, 0, $rank_limit); // Membatasi populasi berdasarkan kapasitas maksimal
+        $new_population[] = $child1;
+        $new_population[] = $child2;
     }
+}
 
-    // Mengurutkan populasi terakhir
-    usort($population, function ($a, $b) {
-        // Urutkan berdasarkan final_score terlebih dahulu
-        if ($b['final_score'] != $a['final_score']) {
-            return $b['final_score'] <=> $a['final_score'];
-        }
-    
-        // Jika final_score sama, urutkan berdasarkan total_score
-        if ($b['total_score'] != $a['total_score']) {
-            return $b['total_score'] <=> $a['total_score'];
-        }
-    
-        // Jika total_score sama, urutkan berdasarkan skor wawancara
-        if ($b['score_interviews'] != $a['score_interviews']) {
-            return $b['score_interviews'] <=> $a['score_interviews'];
-        }
-    
-        // Jika skor wawancara sama, urutkan berdasarkan soft_skills
-        if ($b['soft_skills'] != $a['soft_skills']) {
-            return $b['soft_skills'] <=> $a['soft_skills'];
-        }
-    
-        // Jika soft_skills sama, urutkan berdasarkan score_test
-        return $b['score_test'] <=> $a['score_test'];
-    });
-    
-    
-    $rank = 1;
-    foreach ($population as &$individual) {
-        $individual['rank'] = $rank++;
-        $individual['status'] = $individual['final_score'] > 0.50 ? 'Lulus' : 'Tidak Lulus';
+// Mutasi
+foreach ($new_population as &$individual) {
+    if (rand(0, 100) / 100 < $mutation_rate) {
+        $individual['score_test'] = min(100, max(0, $individual['score_test'] + rand(-5, 5)));
+        $individual['soft_skills'] = min(100, max(0, $individual['soft_skills'] + rand(-5, 5)));
+        $individual['score_interviews'] = min(100, max(0, $individual['score_interviews'] + rand(-5, 5)));
+
+        $individual['final_score'] = fuzzyLogic(
+        $individual['score_test'], 
+        $individual['soft_skills'], 
+        $individual['score_interviews']
+        )['final_score'];
     }
+}
 
-    return $population;
+    $population = array_merge($selected, $new_population); // Menggabungkan populasi lama dengan generasi baru
+
+    $population = array_slice($population, 0, $rank_limit); // Membatasi populasi berdasarkan kapasitas maksimal
+}
+
+// Mengurutkan populasi terakhir
+usort($population, function ($a, $b) {
+    // Urutkan berdasarkan final_score terlebih dahulu
+    if ($b['final_score'] != $a['final_score']) {
+        return $b['final_score'] <=> $a['final_score'];
+    }
+    
+    // Jika final_score sama, urutkan berdasarkan total_score
+    if ($b['total_score'] != $a['total_score']) {
+        return $b['total_score'] <=> $a['total_score'];
+    }
+    
+    // Jika total_score sama, urutkan berdasarkan skor wawancara
+    if ($b['score_interviews'] != $a['score_interviews']) {
+        return $b['score_interviews'] <=> $a['score_interviews'];
+    }
+    
+    // Jika skor wawancara sama, urutkan berdasarkan soft_skills
+    if ($b['soft_skills'] != $a['soft_skills']) {
+        return $b['soft_skills'] <=> $a['soft_skills'];
+    }
+    
+    // Jika soft_skills sama, urutkan berdasarkan score_test
+    return $b['score_test'] <=> $a['score_test'];
+});
+    
+$rank = 1;
+foreach ($population as &$individual) {
+    $individual['rank'] = $rank++;
+    $individual['status'] = $individual['final_score'] > 0.50 ? 'Lulus' : 'Tidak Lulus';
+}
+
+return $population;
 }
 
 // Pilih Lowongan
@@ -315,10 +314,10 @@ if ($selected_job_id) {
     $job_title = 'Tidak Diketahui'; // Default jika selected_job_id tidak ditemukan
 }
 
-                // Query untuk mengambil email berdasarkan applicant_id
+// Query untuk mengambil email berdasarkan applicant_id
              
 
-                $email_stmt = $conn->prepare("
+$email_stmt = $conn->prepare("
     SELECT uj.email 
     FROM users_job uj
     JOIN applicants a ON uj.id = a.user_id
@@ -330,10 +329,9 @@ $email_stmt->bind_result($email);
 $email_stmt->fetch();
 $email_stmt->close();
 
-
-                if ($email) {
-                    // Kirim email menggunakan PHPMailer
-                    $mail = new PHPMailer(true);
+if ($email) {
+    // Kirim email menggunakan PHPMailer
+    $mail = new PHPMailer(true);
 
                     try {
                         // Konfigurasi SMTP
@@ -446,28 +444,28 @@ $email_stmt->close();
                                     <div class="form-group col-xl-4 col-lg-6 col-md-6">
                                         <label>Lowongan</label>
                                         <div class="dropdown bootstrap-select wt-search-bar-select dropup">
-                                        <select class="wt-search-bar-select selectpicker" data-live-search="true" name="job_id" id="job_id">
-                            <option value="">Pilih Lowongan</option>
-                            <?php
-        $jobs = $conn->query("SELECT id, job_title FROM jobs ORDER BY job_title ASC");
-        while ($job = $jobs->fetch_assoc()) {
-            $selected = ($job['id'] == $selected_job_id) ? 'selected' : '';
-            echo "<option value='{$job['id']}' $selected>{$job['job_title']}</option>";
-        }
-        ?>
-                        </select>
+                                            <select class="wt-search-bar-select selectpicker" data-live-search="true" name="job_id" id="job_id">
+                                                <option value="">Pilih Lowongan</option>
+                                                <?php
+                                                    $jobs = $conn->query("SELECT id, job_title FROM jobs ORDER BY job_title ASC");
+                                                    while ($job = $jobs->fetch_assoc()) {
+                                                        $selected = ($job['id'] == $selected_job_id) ? 'selected' : '';
+                                                        echo "<option value='{$job['id']}' $selected>{$job['job_title']}</option>";
+                                                        }
+                                                    ?>
+                                            </select>
                                         </div>
                                     </div>
 
                                     <div class="form-group col-xl-4 col-lg-6 col-md-6">
                                         <label>Data Ditampilkan</label>
                                         <div class="dropdown bootstrap-select wt-search-bar-select dropup">
-                                        <select class="wt-search-bar-select selectpicker" name="rank_limit" id="rank_limit">
-                                        <option value="10" <?= isset($_GET['rank_limit']) && $_GET['rank_limit'] == '10' ? 'selected' : '' ?>>10</option>
-        <option value="25" <?= isset($_GET['rank_limit']) && $_GET['rank_limit'] == '25' ? 'selected' : '' ?>>25</option>
-        <option value="50" <?= isset($_GET['rank_limit']) && $_GET['rank_limit'] == '50' ? 'selected' : '' ?>>50</option>
-        <option value="100" <?= isset($_GET['rank_limit']) && $_GET['rank_limit'] == '100' ? 'selected' : '' ?>>100</option>
-    </select>
+                                            <select class="wt-search-bar-select selectpicker" name="rank_limit" id="rank_limit">
+                                                <option value="10" <?= isset($_GET['rank_limit']) && $_GET['rank_limit'] == '10' ? 'selected' : '' ?>>10</option>
+                                                <option value="25" <?= isset($_GET['rank_limit']) && $_GET['rank_limit'] == '25' ? 'selected' : '' ?>>25</option>
+                                                <option value="50" <?= isset($_GET['rank_limit']) && $_GET['rank_limit'] == '50' ? 'selected' : '' ?>>50</option>
+                                                <option value="100" <?= isset($_GET['rank_limit']) && $_GET['rank_limit'] == '100' ? 'selected' : '' ?>>100</option>
+                                            </select>
                                         </div>
                                     </div>
                                     
@@ -488,58 +486,57 @@ $email_stmt->close();
                         <div class="twm-mid-content">
                         <!--<a href="?clear_cache=1" class="btn btn-danger">Reset Cache</a>-->
                         
-                <h3>Hasil Kandidat Terbaik</h3>
-                <?php if ($selected_job_id): ?>
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Peringkat</th>
-                            <th>Pelamar</th>
-                            <th>Skor Kompetensi</th>
-                            <th>Skor Soft Skills</th>
-                            <th>Skor Wawancara</th>
-                            <th>Total Skor</th>
-                            <th>Skor Akhir</th>
-                            <th>Status</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                <?php
-                $candidates = geneticAlgorithm($selected_job_id, $conn, $rank_limit, $score_range);
+                            <h3>Hasil Kandidat Terbaik</h3>
+                            <?php if ($selected_job_id): ?>
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Peringkat</th>
+                                        <th>Pelamar</th>
+                                        <th>Skor Kompetensi</th>
+                                        <th>Skor Soft Skills</th>
+                                        <th>Skor Wawancara</th>
+                                        <th>Total Skor</th>
+                                        <th>Skor Akhir</th>
+                                        <th>Status</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php
+                                        $candidates = geneticAlgorithm($selected_job_id, $conn, $rank_limit, $score_range);
+                                        foreach ($candidates as $candidate): ?>
+                                    <tr>
+                                        <td><?= $candidate['rank'] ?></td>
+                                        <td><a href="/job-board/hc/jobs/detail-apply?id=1&search=<?= $candidate['full_name'] ?>&status=Semua+Status&skor=Semua+Skor&tampil=10" target="_blank"><?= $candidate['applicant_id'] ?> - <?= $candidate['full_name'] ?></a></td>
+                                        <td><?= $candidate['score_test'] ?></td>
+                                        <td><?= $candidate['soft_skills'] ?></td>
+                                        <td><?= $candidate['score_interviews'] ?></td>
+                                        <td><?= $candidate['total_score'] ?></td>
+                                        <td>
+                                            <?= number_format($candidate['final_score'], 2) ?><br> 
+                                            <button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#detailModal_<?= $candidate['applicant_id'] ?>">Detail</button>
+                                        </td>
+                                        <td><?= $candidate['status'] ?></td>
+                                        <td class="text-nowrap">
+                                            <form method='POST'>
+                                                <input type="hidden" name="applicant_id" value="<?= $candidate['applicant_id'] ?>">
+                                                Apakah Lulus?<br>
+                                                <button type="submit" name="Lulus" class="btn btn-primary">Lulus</button>
+                                                <button type="submit" name="Ditolak" class="btn btn-danger">Tidak</button>
+                                            </form>    
+                                        </td>
+                                    </tr>
 
-                foreach ($candidates as $candidate): ?>
-                    <tr>
-                        <td><?= $candidate['rank'] ?></td>
-                        <td><a href="/job-board/hc/jobs/detail-apply?id=1&search=<?= $candidate['full_name'] ?>&status=Semua+Status&skor=Semua+Skor&tampil=10" target="_blank"><?= $candidate['applicant_id'] ?> - <?= $candidate['full_name'] ?></a></td>
-                        <td><?= $candidate['score_test'] ?></td>
-                        <td><?= $candidate['soft_skills'] ?></td>
-                        <td><?= $candidate['score_interviews'] ?></td>
-                        <td><?= $candidate['total_score'] ?></td>
-                        <td>
-                        <?= number_format($candidate['final_score'], 2) ?><br> 
-                            <button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#detailModal_<?= $candidate['applicant_id'] ?>">Detail</button>
-                        </td>
-                        <td><?= $candidate['status'] ?></td>
-                        <td class="text-nowrap">
-                            <form method='POST'>
-                                <input type="hidden" name="applicant_id" value="<?= $candidate['applicant_id'] ?>">
-                                Apakah Lulus?<br>
-                                <button type="submit" name="Lulus" class="btn btn-primary">Lulus</button>
-                                <button type="submit" name="Ditolak" class="btn btn-danger">Tidak</button>
-                            </form>    
-                        </td>
-                    </tr>
-
-                    <div class="modal fade" id="detailModal_<?= $candidate['applicant_id'] ?>" tabindex="-1" aria-labelledby="detailModalLabel_<?= $candidate['applicant_id'] ?>" aria-hidden="true">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                    <h5 class="modal-title" id="detailModalLabel_<?= $candidate['applicant_id'] ?>">Detail Perhitungan - <?= $candidate['full_name'] ?> (ID <?= $candidate['applicant_id'] ?>)</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                    </div>
-                                    <div class="modal-body">
-    <h6>Langkah 1: Fuzzifikasi</h6>
+                                    <div class="modal fade" id="detailModal_<?= $candidate['applicant_id'] ?>" tabindex="-1" aria-labelledby="detailModalLabel_<?= $candidate['applicant_id'] ?>" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="detailModalLabel_<?= $candidate['applicant_id'] ?>">Detail Perhitungan - <?= $candidate['full_name'] ?> (ID <?= $candidate['applicant_id'] ?>)</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <h6>Langkah 1: Fuzzifikasi</h6>
     <ul>
         <li><strong>Skor Tes:</strong> Low = <?= round($candidate['details']['test']['low'], 2) ?>, Medium = <?= round($candidate['details']['test']['medium'], 2) ?>, High = <?= round($candidate['details']['test']['high'], 2) ?></li>
         <li><strong>Soft Skills:</strong> Low = <?= round($candidate['details']['skills']['low'], 2) ?>, Medium = <?= round($candidate['details']['skills']['medium'], 2) ?>, High = <?= round($candidate['details']['skills']['high'], 2) ?></li>
